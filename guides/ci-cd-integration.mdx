@@ -1,0 +1,357 @@
+---
+title: CI/CD Integration
+description: Automate TTS audio generation with GitHub Actions and other CI/CD platforms
+---
+
+Integrating `speak-mintlify` into your CI/CD pipeline ensures your documentation audio stays in sync with content changes automatically.
+
+## GitHub Actions
+
+### Basic Workflow
+
+Create a workflow file to generate audio on every push to your documentation:
+
+<Steps>
+  <Step title="Create workflow file">
+    Add `.github/workflows/tts.yaml` to your repository:
+
+    ```yaml .github/workflows/tts.yaml
+    name: Generate TTS Audio
+
+    on:
+      push:
+        branches:
+          - main
+        paths:
+          - '**.mdx'
+          - 'speaker-config.yaml'
+      workflow_dispatch:
+
+    jobs:
+      generate-audio:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+
+          - name: Generate TTS audio
+            run: npx speak-mintlify generate .
+            env:
+              FISH_API_KEY: ${{ secrets.FISH_API_KEY }}
+              S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+              S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+              S3_BUCKET: ${{ secrets.S3_BUCKET }}
+              S3_PUBLIC_URL: ${{ vars.S3_PUBLIC_URL }}
+              S3_REGION: ${{ vars.S3_REGION }}
+              S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+
+          - name: Commit audio components
+            run: |
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add .
+              git diff --staged --quiet || git commit -m "chore: update TTS audio components"
+              git push
+    ```
+  </Step>
+
+  <Step title="Configure secrets">
+    Add the following secrets in your GitHub repository settings (Settings → Secrets and variables → Actions):
+
+    **Secrets** (sensitive values):
+    - `FISH_API_KEY` - Your Fish Audio API key
+    - `S3_ACCESS_KEY_ID` - S3 access key
+    - `S3_SECRET_ACCESS_KEY` - S3 secret key
+    - `S3_BUCKET` - Your S3 bucket name
+
+    **Variables** (non-sensitive):
+    - `S3_PUBLIC_URL` - Public URL for your S3 bucket
+    - `S3_REGION` - S3 region (e.g., `us-east-1`)
+    - `S3_ENDPOINT` - S3 endpoint URL (optional, for R2/MinIO)
+  </Step>
+
+  <Step title="Test the workflow">
+    Push a change to an MDX file or manually trigger the workflow from the Actions tab.
+  </Step>
+</Steps>
+
+### Advanced Workflow with Cleanup
+
+Automatically remove orphaned audio files:
+
+```yaml .github/workflows/tts-advanced.yaml
+name: Generate TTS Audio with Cleanup
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.mdx'
+      - 'speaker-config.yaml'
+  workflow_dispatch:
+
+jobs:
+  generate-audio:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Generate TTS audio
+        run: npx speak-mintlify generate .
+        env:
+          FISH_API_KEY: ${{ secrets.FISH_API_KEY }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_PUBLIC_URL: ${{ vars.S3_PUBLIC_URL }}
+          S3_REGION: ${{ vars.S3_REGION }}
+          S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+
+      - name: Cleanup orphaned audio files
+        run: npx speak-mintlify cleanup .
+        env:
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_PUBLIC_URL: ${{ vars.S3_PUBLIC_URL }}
+          S3_REGION: ${{ vars.S3_REGION }}
+          S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update TTS audio components [skip ci]"
+            git push
+          fi
+```
+
+<Note>
+  The `[skip ci]` tag in the commit message prevents the workflow from triggering itself in an infinite loop.
+</Note>
+
+### Preview Changes with Pull Requests
+
+Run in dry-run mode on pull requests to preview changes:
+
+```yaml .github/workflows/tts-preview.yaml
+name: Preview TTS Changes
+
+on:
+  pull_request:
+    paths:
+      - '**.mdx'
+      - 'speaker-config.yaml'
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Preview TTS generation
+        run: npx speak-mintlify generate . --dry-run --verbose
+        env:
+          FISH_API_KEY: ${{ secrets.FISH_API_KEY }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_PUBLIC_URL: ${{ vars.S3_PUBLIC_URL }}
+          S3_REGION: ${{ vars.S3_REGION }}
+```
+
+## GitLab CI/CD
+
+For GitLab repositories, create `.gitlab-ci.yml`:
+
+```yaml .gitlab-ci.yml
+stages:
+  - generate
+
+generate-tts:
+  stage: generate
+  image: node:20
+  only:
+    changes:
+      - "**/*.mdx"
+      - "speaker-config.yaml"
+  script:
+    - npx speak-mintlify generate .
+    - npx speak-mintlify cleanup .
+    - |
+      if [ -n "$(git status --porcelain)" ]; then
+        git config user.name "GitLab CI"
+        git config user.email "ci@gitlab.com"
+        git add .
+        git commit -m "chore: update TTS audio [skip ci]"
+        git push https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
+      fi
+  variables:
+    FISH_API_KEY: $FISH_API_KEY
+    S3_ACCESS_KEY_ID: $S3_ACCESS_KEY_ID
+    S3_SECRET_ACCESS_KEY: $S3_SECRET_ACCESS_KEY
+    S3_BUCKET: $S3_BUCKET
+    S3_PUBLIC_URL: $S3_PUBLIC_URL
+    S3_REGION: $S3_REGION
+```
+
+<Tip>
+  Configure variables in GitLab under Settings → CI/CD → Variables. Mark sensitive values as "Masked" and "Protected".
+</Tip>
+
+## CircleCI
+
+Create `.circleci/config.yml`:
+
+```yaml .circleci/config.yml
+version: 2.1
+
+jobs:
+  generate-tts:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+      - run:
+          name: Generate TTS audio
+          command: npx speak-mintlify generate .
+      - run:
+          name: Cleanup orphaned files
+          command: npx speak-mintlify cleanup .
+      - run:
+          name: Commit changes
+          command: |
+            git config user.name "CircleCI"
+            git config user.email "ci@circleci.com"
+            git add .
+            git diff --staged --quiet || git commit -m "chore: update TTS audio"
+            git push origin $CIRCLE_BRANCH
+
+workflows:
+  tts-generation:
+    jobs:
+      - generate-tts:
+          filters:
+            branches:
+              only: main
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Workflow fails with 'Missing required configuration'">
+    Ensure all required secrets and variables are configured:
+    - `FISH_API_KEY`
+    - `S3_ACCESS_KEY_ID`
+    - `S3_SECRET_ACCESS_KEY`
+    - `S3_BUCKET`
+    - `S3_PUBLIC_URL`
+
+    Check that variable names match exactly (case-sensitive).
+  </Accordion>
+
+  <Accordion title="Git push fails with 'Permission denied'">
+    For GitHub Actions, ensure the workflow has write permissions:
+
+    ```yaml
+    permissions:
+      contents: write
+    ```
+
+    For GitLab, create a CI/CD variable `CI_PUSH_TOKEN` with an access token that has `write_repository` scope.
+  </Accordion>
+
+  <Accordion title="Workflow triggers infinite loop">
+    Add `[skip ci]` or `[ci skip]` to your commit message:
+
+    ```bash
+    git commit -m "chore: update audio [skip ci]"
+    ```
+
+    Or configure the workflow to skip commits from the bot:
+
+    ```yaml
+    on:
+      push:
+        branches:
+          - main
+    jobs:
+      generate:
+        if: github.actor != 'github-actions[bot]'
+    ```
+  </Accordion>
+
+  <Accordion title="S3 upload fails with 403 Forbidden">
+    Verify your S3 credentials have the correct permissions:
+    - `s3:PutObject` - Upload files
+    - `s3:ListBucket` - List objects for cleanup
+    - `s3:DeleteObject` - Delete orphaned files
+
+    For AWS S3, check the bucket policy and IAM user permissions. For Cloudflare R2, verify the API token has R2 Edit permissions.
+  </Accordion>
+
+  <Accordion title="Files not being tracked in git">
+    Check that MDX files aren't in `.gitignore`. The workflow commits modified MDX files with audio components.
+
+    If you want to keep MDX files clean, you can:
+    1. Store generated components separately
+    2. Use a different branch for generated content
+    3. Configure `--dry-run` mode and handle uploads externally
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use workflow_dispatch" icon="hand-pointer">
+    Allow manual workflow triggers for testing and one-off regeneration.
+  </Card>
+
+  <Card title="Cache dependencies" icon="bolt">
+    Use `cache: 'npm'` in setup-node to speed up workflows.
+  </Card>
+
+  <Card title="Run cleanup periodically" icon="broom">
+    Schedule cleanup jobs weekly to remove orphaned files and reduce storage costs.
+  </Card>
+
+  <Card title="Monitor API usage" icon="chart-line">
+    Track Fish Audio API usage to stay within your plan limits.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="S3 Setup" icon="database" href="/guides/s3-setup">
+    Configure S3-compatible storage for your audio files
+  </Card>
+
+  <Card title="Fish Audio" icon="microphone" href="/guides/fish-audio">
+    Learn how to get API keys and choose voices
+  </Card>
+</CardGroup>

@@ -1,0 +1,109 @@
+---
+title: Speaker Config
+description: Configure voices and components using speaker-config.yaml
+---
+
+The `speaker-config.yaml` file is the central configuration file for speak-mintlify. It defines voice mappings and component settings for your documentation.
+
+## File Location
+
+Place `speaker-config.yaml` in the root of your documentation directory (the same directory you run `speak-mintlify` from).
+
+## Configuration Structure
+
+### Voices
+
+The `voices` section maps Fish Audio voice IDs to friendly display names:
+
+```yaml speaker-config.yaml
+voices:
+  8ef4a238714b45718ce04243307c57a7: E-girl
+  802e3bc2b27e49c2995d23ef70e6ac89: Energetic Male
+  933563129e564b19a115bedd57b7406a: Sarah
+  bf322df2096a46f18c579d0baa36f41d: Adrian
+  b347db033a6549378b48d00acb0d06cd: Selene
+  536d3a5e000945adb7038665781a4aca: Ethan
+```
+
+<Note>
+Voice IDs come from [Fish Audio](https://fish.audio/). Each voice ID is a unique identifier for a TTS voice.
+</Note>
+
+### Component Settings
+
+The `component` section configures the audio player that gets injected into your MDX files:
+
+```yaml speaker-config.yaml
+component:
+  import: /snippets/audio-transcript.jsx
+  name: AudioTranscript
+```
+
+**Options:**
+- `import` - The import path for your audio player component (relative to your Mintlify docs root)
+- `name` - The component name used in the MDX import statement
+
+## Full Example
+
+```yaml speaker-config.yaml
+# speaker-config.yaml
+# Configuration file for speak-mintlify TTS generation
+#
+# S3 credentials and API keys should go in .env or environment variables
+
+# Voice Configuration (map of voice ID -> display name)
+voices:
+  8ef4a238714b45718ce04243307c57a7: E-girl
+  802e3bc2b27e49c2995d23ef70e6ac89: Energetic Male
+  933563129e564b19a115bedd57b7406a: Sarah
+  bf322df2096a46f18c579d0baa36f41d: Adrian
+  b347db033a6549378b48d00acb0d06cd: Selene
+  536d3a5e000945adb7038665781a4aca: Ethan
+
+  # Add more voices as needed
+
+# Component Configuration (optional)
+component:
+  import: /snippets/audio-transcript.jsx
+  name: AudioTranscript
+```
+
+## Configuration Priority
+
+speak-mintlify uses the following priority order for configuration:
+
+1. **CLI flags** (highest priority)
+2. **Environment variables**
+3. **speaker-config.yaml**
+4. **Defaults** (lowest priority)
+
+This means you can override YAML settings with CLI flags or environment variables.
+
+<Tip>
+Keep sensitive credentials (API keys, S3 secrets) in `.env` or environment variables, not in `speaker-config.yaml`.
+</Tip>
+
+## CLI Overrides
+
+You can override voice configuration via CLI flags:
+
+```bash
+speak-mintlify generate --voices "voice-id-1,voice-id-2" --voice-names "Voice 1,Voice 2"
+```
+
+Component settings can also be overridden:
+
+```bash
+speak-mintlify generate --component-import "/components/player.jsx" --component-name "AudioPlayer"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="key" href="/configuration/environment-variables">
+    Configure API keys and S3 credentials
+  </Card>
+  <Card title="Audio Component" icon="waveform" href="/configuration/audio-component">
+    Customize the audio player component
+  </Card>
+</CardGroup>

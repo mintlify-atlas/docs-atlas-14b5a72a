@@ -1,0 +1,265 @@
+---
+title: .speakignore
+description: Exclude files and directories from TTS generation
+---
+
+The `.speakignore` file lets you exclude specific files or directories from TTS audio generation. It uses gitignore syntax for pattern matching.
+
+## Creating .speakignore
+
+Create a `.speakignore` file in your documentation directory:
+
+```bash
+touch .speakignore
+```
+
+## Syntax
+
+`.speakignore` uses the same pattern syntax as `.gitignore`:
+
+- `#` for comments
+- `*` matches any sequence of characters
+- `**` matches nested directories
+- `!` negates a pattern (include instead of exclude)
+- `/` at the end matches directories only
+
+## Common Patterns
+
+### Exclude Directories
+
+```gitignore .speakignore
+# Exclude entire directories
+snippets/**
+api-reference/**
+drafts/**
+internal/**
+```
+
+### Exclude Specific Files
+
+```gitignore .speakignore
+# Exclude specific files
+README.mdx
+CONTRIBUTING.mdx
+CHANGELOG.mdx
+```
+
+### Exclude by Pattern
+
+```gitignore .speakignore
+# Exclude all files starting with "draft-"
+draft-*.mdx
+
+# Exclude all files in any "examples" directory
+**/examples/**
+
+# Exclude all .md files (only process .mdx)
+**/*.md
+```
+
+## Example .speakignore
+
+Here's a complete example:
+
+```gitignore .speakignore
+# .speakignore
+# Exclude files/folders from TTS generation (uses gitignore syntax)
+
+# Common Mintlify excludes
+snippets/**
+api-reference/**
+
+# Drafts and internal docs
+drafts/**
+internal/**
+
+# Meta files
+README.mdx
+CONTRIBUTING.mdx
+```
+
+<Tip>
+Use `.speakignore` to skip auto-generated API reference pages, code snippets, or internal documentation that doesn't need audio narration.
+</Tip>
+
+## How It Works
+
+When you run `speak-mintlify generate`, the tool:
+
+1. Searches for MDX files using the `--pattern` glob (default: `**/*.mdx`)
+2. Filters out files matching `.speakignore` patterns
+3. Only generates TTS audio for remaining files
+
+<Note>
+Excluded files are completely skipped - no API calls, no S3 uploads, no MDX modifications.
+</Note>
+
+## Testing Your Patterns
+
+Use the `--dry-run` flag to preview which files will be processed:
+
+```bash
+speak-mintlify generate --dry-run
+```
+
+This shows:
+- Files that will be processed
+- Files that will be skipped
+- Reason for skipping (e.g., "matched .speakignore pattern")
+
+## Advanced Patterns
+
+### Include Exceptions
+
+Exclude a directory but include specific files:
+
+```gitignore .speakignore
+# Exclude all of api-reference/
+api-reference/**
+
+# But include the overview page
+!api-reference/overview.mdx
+```
+
+### Multiple Patterns
+
+Combine multiple exclusion rules:
+
+```gitignore .speakignore
+# Exclude by directory
+drafts/**
+internal/**
+
+# Exclude by file name pattern
+draft-*.mdx
+test-*.mdx
+*-wip.mdx
+
+# Exclude specific files
+README.mdx
+CHANGELOG.mdx
+```
+
+### Exclude by Depth
+
+Exclude files at specific directory depths:
+
+```gitignore .speakignore
+# Exclude all MDX files in root directory only
+/*.mdx
+
+# Exclude only files directly in the guides folder
+guides/*.mdx
+
+# Exclude files at any depth in guides (including subdirectories)
+guides/**/*.mdx
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Skip API Reference Pages">
+    API reference pages are often auto-generated and may not need narration:
+
+    ```gitignore .speakignore
+    api-reference/**
+    openapi/**
+    ```
+  </Accordion>
+
+  <Accordion title="Skip Snippets and Components">
+    Exclude reusable snippets that aren't standalone pages:
+
+    ```gitignore .speakignore
+    snippets/**
+    components/**
+    ```
+  </Accordion>
+
+  <Accordion title="Skip Draft Content">
+    Exclude work-in-progress documentation:
+
+    ```gitignore .speakignore
+    drafts/**
+    **/draft-*.mdx
+    **/*-wip.mdx
+    ```
+  </Accordion>
+
+  <Accordion title="Skip Internal Documentation">
+    Exclude docs meant only for internal team use:
+
+    ```gitignore .speakignore
+    internal/**
+    team/**
+    private/**
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Pattern Matching Priority
+
+Patterns are evaluated in order from top to bottom:
+
+```gitignore .speakignore
+# This matches first
+guides/**
+
+# This can override the previous exclusion
+!guides/getting-started.mdx
+```
+
+The file `guides/getting-started.mdx` will be **included** because the `!` pattern comes after the exclusion.
+
+## Debugging
+
+If files aren't being excluded as expected:
+
+<Steps>
+  <Step title="Check pattern syntax">
+    Ensure you're using correct gitignore syntax:
+    - `dir/**` excludes all files in `dir/`
+    - `dir/*` only excludes direct children
+    - `*.mdx` matches at any level
+  </Step>
+  
+  <Step title="Use --verbose flag">
+    Run with verbose output to see which files are skipped:
+
+    ```bash
+    speak-mintlify generate --verbose
+    ```
+  </Step>
+  
+  <Step title="Test with --dry-run">
+    Preview without making changes:
+
+    ```bash
+    speak-mintlify generate --dry-run --verbose
+    ```
+  </Step>
+</Steps>
+
+## Performance Benefits
+
+Using `.speakignore` effectively can:
+
+- Reduce API calls to Fish Audio
+- Lower S3 storage costs
+- Speed up generation time
+- Keep your docs cleaner (no audio on pages that don't need it)
+
+<Tip>
+Start with a restrictive `.speakignore` and gradually include more sections as needed. It's easier to add than remove.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Speaker Config" icon="microphone" href="/configuration/speaker-config">
+    Configure voices and components
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli-reference">
+    View all CLI commands and options
+  </Card>
+</CardGroup>

@@ -1,0 +1,426 @@
+---
+title: 'TypeScript Types'
+description: 'Complete reference of TypeScript interfaces and types used in speak-mintlify'
+icon: 'code'
+---
+
+This page documents all TypeScript interfaces and types exported by speak-mintlify. These types are used throughout the codebase and can be imported when building custom integrations or extensions.
+
+## Voice Configuration
+
+### Voice
+
+Represents a voice configuration for TTS generation.
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the voice (Fish Audio reference ID)
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Human-readable name for the voice (e.g., "Sarah", "John")
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  Public URL to the generated audio file (set after upload to S3)
+</ResponseField>
+
+```typescript
+export interface Voice {
+  id: string;
+  name: string;
+  url?: string;
+}
+```
+
+## Metadata Types
+
+### AudioMetadata
+
+Stores metadata for each processed file, used for change detection and caching.
+
+<ResponseField name="hash" type="string" required>
+  SHA-256 hash of the file's text content
+</ResponseField>
+
+<ResponseField name="lastUpdated" type="string" required>
+  ISO 8601 timestamp of when the audio was last generated
+</ResponseField>
+
+<ResponseField name="voices" type="Voice[]" required>
+  Array of voice configurations with generated audio URLs
+</ResponseField>
+
+```typescript
+export interface AudioMetadata {
+  hash: string;
+  lastUpdated: string;
+  voices: Voice[];
+}
+```
+
+### MetadataFile
+
+Structure of the `.audio-metadata.json` file that tracks all processed files.
+
+```typescript
+export interface MetadataFile {
+  [filePath: string]: AudioMetadata;
+}
+```
+
+**Example:**
+```json
+{
+  "getting-started.mdx": {
+    "hash": "a1b2c3d4...",
+    "lastUpdated": "2024-03-15T10:30:00Z",
+    "voices": [
+      {
+        "id": "voice-123",
+        "name": "Sarah",
+        "url": "https://cdn.example.com/audio/getting-started/voice-123.mp3"
+      }
+    ]
+  }
+}
+```
+
+## Configuration Types
+
+### S3Config
+
+Configuration for S3-compatible storage (AWS S3, Cloudflare R2, MinIO, etc.).
+
+<ResponseField name="bucket" type="string" required>
+  S3 bucket name
+</ResponseField>
+
+<ResponseField name="region" type="string" required>
+  AWS region (or "auto" for Cloudflare R2)
+</ResponseField>
+
+<ResponseField name="endpoint" type="string">
+  Custom endpoint URL for R2, MinIO, or other S3-compatible services
+</ResponseField>
+
+<ResponseField name="accessKeyId" type="string" required>
+  S3 access key ID
+</ResponseField>
+
+<ResponseField name="secretAccessKey" type="string" required>
+  S3 secret access key
+</ResponseField>
+
+<ResponseField name="publicUrl" type="string" required>
+  CDN or public URL base for accessing uploaded files
+</ResponseField>
+
+<ResponseField name="pathPrefix" type="string">
+  Optional path prefix for organizing files (e.g., "audio/")
+</ResponseField>
+
+```typescript
+export interface S3Config {
+  bucket: string;
+  region: string;
+  endpoint?: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicUrl: string;
+  pathPrefix?: string;
+}
+```
+
+### TTSConfig
+
+Configuration for text-to-speech generation.
+
+<ResponseField name="fishApiKey" type="string" required>
+  Fish Audio API key for TTS generation
+</ResponseField>
+
+<ResponseField name="voiceIds" type="string[]" required>
+  Array of Fish Audio voice reference IDs
+</ResponseField>
+
+<ResponseField name="voiceNames" type="string[]">
+  Human-readable names corresponding to voice IDs
+</ResponseField>
+
+<ResponseField name="s3Config" type="S3Config" required>
+  S3 storage configuration
+</ResponseField>
+
+<ResponseField name="componentImport" type="string">
+  Path to audio player component (default: "/snippets/audio-transcript.jsx")
+</ResponseField>
+
+<ResponseField name="componentName" type="string">
+  Name of audio player component (default: "AudioTranscript")
+</ResponseField>
+
+```typescript
+export interface TTSConfig {
+  fishApiKey: string;
+  voiceIds: string[];
+  voiceNames?: string[];
+  s3Config: S3Config;
+  componentImport?: string;
+  componentName?: string;
+}
+```
+
+## Fish Audio Types
+
+### FishAudioRequest
+
+Request parameters for the Fish Audio API.
+
+<ResponseField name="text" type="string" required>
+  Text content to convert to speech
+</ResponseField>
+
+<ResponseField name="reference_id" type="string" required>
+  Fish Audio voice reference ID
+</ResponseField>
+
+<ResponseField name="format" type="string">
+  Audio format (default: "mp3")
+</ResponseField>
+
+<ResponseField name="mp3_bitrate" type="number">
+  MP3 bitrate in kbps
+</ResponseField>
+
+<ResponseField name="opus_bitrate" type="number">
+  Opus bitrate in kbps
+</ResponseField>
+
+<ResponseField name="latency" type="'normal' | 'balanced'">
+  Generation latency mode
+</ResponseField>
+
+<ResponseField name="streaming" type="boolean">
+  Enable streaming response
+</ResponseField>
+
+```typescript
+export interface FishAudioRequest {
+  text: string;
+  reference_id: string;
+  format?: string;
+  mp3_bitrate?: number;
+  opus_bitrate?: number;
+  latency?: 'normal' | 'balanced';
+  streaming?: boolean;
+}
+```
+
+## Processing Types
+
+### ProcessingResult
+
+Result of processing a single MDX file.
+
+<ResponseField name="file" type="string" required>
+  Path to the processed file
+</ResponseField>
+
+<ResponseField name="success" type="boolean" required>
+  Whether processing succeeded
+</ResponseField>
+
+<ResponseField name="voices" type="Voice[]" required>
+  Array of voice configurations with audio URLs
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message if processing failed
+</ResponseField>
+
+<ResponseField name="skipped" type="boolean">
+  Whether the file was skipped (e.g., unchanged content)
+</ResponseField>
+
+<ResponseField name="reason" type="string">
+  Reason for skipping the file
+</ResponseField>
+
+```typescript
+export interface ProcessingResult {
+  file: string;
+  success: boolean;
+  voices: Voice[];
+  error?: string;
+  skipped?: boolean;
+  reason?: string;
+}
+```
+
+## CLI Command Options
+
+### GenerateOptions
+
+Command-line options for the `generate` command.
+
+<ResponseField name="apiKey" type="string">
+  Fish Audio API key (can also use FISH_API_KEY env var)
+</ResponseField>
+
+<ResponseField name="voices" type="string">
+  Comma-separated voice IDs (can also use speaker-config.yaml)
+</ResponseField>
+
+<ResponseField name="voiceNames" type="string">
+  Comma-separated voice names
+</ResponseField>
+
+<ResponseField name="s3Bucket" type="string">
+  S3 bucket name (can also use S3_BUCKET env var)
+</ResponseField>
+
+<ResponseField name="s3Region" type="string">
+  S3 region
+</ResponseField>
+
+<ResponseField name="s3Endpoint" type="string">
+  Custom S3 endpoint
+</ResponseField>
+
+<ResponseField name="s3AccessKeyId" type="string">
+  S3 access key ID
+</ResponseField>
+
+<ResponseField name="s3SecretAccessKey" type="string">
+  S3 secret access key
+</ResponseField>
+
+<ResponseField name="s3PublicUrl" type="string">
+  Public URL for accessing files
+</ResponseField>
+
+<ResponseField name="s3PathPrefix" type="string">
+  Path prefix for organizing files
+</ResponseField>
+
+<ResponseField name="componentImport" type="string">
+  Component import path
+</ResponseField>
+
+<ResponseField name="componentName" type="string">
+  Component name
+</ResponseField>
+
+<ResponseField name="pattern" type="string">
+  Glob pattern for MDX files
+</ResponseField>
+
+<ResponseField name="dryRun" type="boolean">
+  Preview changes without making them
+</ResponseField>
+
+<ResponseField name="verbose" type="boolean">
+  Enable verbose logging
+</ResponseField>
+
+```typescript
+export interface GenerateOptions {
+  apiKey?: string;
+  voices?: string;
+  voiceNames?: string;
+  s3Bucket?: string;
+  s3Region?: string;
+  s3Endpoint?: string;
+  s3AccessKeyId?: string;
+  s3SecretAccessKey?: string;
+  s3PublicUrl?: string;
+  s3PathPrefix?: string;
+  componentImport?: string;
+  componentName?: string;
+  pattern?: string;
+  dryRun?: boolean;
+  verbose?: boolean;
+}
+```
+
+### CleanupOptions
+
+Command-line options for the `cleanup` command.
+
+<ResponseField name="s3Bucket" type="string">
+  S3 bucket name
+</ResponseField>
+
+<ResponseField name="s3Region" type="string">
+  S3 region
+</ResponseField>
+
+<ResponseField name="s3Endpoint" type="string">
+  Custom S3 endpoint
+</ResponseField>
+
+<ResponseField name="s3AccessKeyId" type="string">
+  S3 access key ID
+</ResponseField>
+
+<ResponseField name="s3SecretAccessKey" type="string">
+  S3 secret access key
+</ResponseField>
+
+<ResponseField name="s3PublicUrl" type="string">
+  Public URL for accessing files
+</ResponseField>
+
+<ResponseField name="s3PathPrefix" type="string">
+  Path prefix for organizing files
+</ResponseField>
+
+<ResponseField name="componentName" type="string">
+  Component name to remove
+</ResponseField>
+
+<ResponseField name="pattern" type="string">
+  Glob pattern for MDX files
+</ResponseField>
+
+<ResponseField name="dryRun" type="boolean">
+  Preview changes without making them
+</ResponseField>
+
+<ResponseField name="verbose" type="boolean">
+  Enable verbose logging
+</ResponseField>
+
+```typescript
+export interface CleanupOptions {
+  s3Bucket?: string;
+  s3Region?: string;
+  s3Endpoint?: string;
+  s3AccessKeyId?: string;
+  s3SecretAccessKey?: string;
+  s3PublicUrl?: string;
+  s3PathPrefix?: string;
+  componentName?: string;
+  pattern?: string;
+  dryRun?: boolean;
+  verbose?: boolean;
+}
+```
+
+## Importing Types
+
+All types are exported from the main types module:
+
+```typescript
+import type {
+  Voice,
+  AudioMetadata,
+  MetadataFile,
+  S3Config,
+  TTSConfig,
+  FishAudioRequest,
+  ProcessingResult,
+  GenerateOptions,
+  CleanupOptions,
+} from 'speak-mintlify/types';
+```

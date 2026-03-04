@@ -1,80 +1,175 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get up and running with speak-mintlify in under 5 minutes
 ---
 
-## Get started in three steps
+This guide walks you through adding voice narration to your Mintlify documentation from start to finish.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, make sure you have:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+- Node.js 18.0.0 or higher installed
+- A Mintlify documentation project with MDX files
+- A [Fish Audio](https://fish.audio) API key
+- An S3-compatible storage service (AWS S3, Cloudflare R2, MinIO, etc.)
 
-### Step 2: Deploy your changes
+<Steps>
+  <Step title="Install speak-mintlify">
+    Install speak-mintlify in your documentation repository:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <CodeGroup>
+    ```bash npm
+    npm install speak-mintlify
+    ```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```bash yarn
+    yarn add speak-mintlify
+    ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash pnpm
+    pnpm add speak-mintlify
+    ```
+    </CodeGroup>
 
-### Step 3: Go live
+    <Tip>
+      You can also use `npx speak-mintlify` without installing to run commands directly
+    </Tip>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Create speaker-config.yaml">
+    Create a `speaker-config.yaml` file at your repository root to configure voices and component settings:
+
+    ```yaml speaker-config.yaml
+    # Voice Configuration (map of voice ID -> display name)
+    voices:
+      8ef4a238714b45718ce04243307c57a7: E-girl
+      bf322df2096a46f18c579d0baa36f41d: Adrian
+      # Add more voices as needed
+
+    # Component Configuration (optional)
+    component:
+      import: /snippets/audio-transcript.jsx
+      name: AudioTranscript
+    ```
+
+    <Note>
+      Voice IDs come from Fish Audio. You can find available voices in your Fish Audio dashboard.
+    </Note>
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file at your repository root with your API credentials:
+
+    ```bash .env
+    # Secrets (required)
+    FISH_API_KEY=your_api_key
+    S3_ACCESS_KEY_ID=your_access_key_id
+    S3_SECRET_ACCESS_KEY=your_secret_key
+
+    # S3 Config (required)
+    S3_BUCKET=your-bucket
+    S3_PUBLIC_URL=https://s3.example.com
+    S3_REGION=us-east-1
+    S3_ENDPOINT=https://s3-endpoint.example.com
+    ```
+
+    <Warning>
+      Never commit your `.env` file to version control. Add it to your `.gitignore`.
+    </Warning>
+  </Step>
+
+  <Step title="Create your audio component">
+    Create an audio player component that matches the import path in your `speaker-config.yaml`.
+
+    Your component needs to accept a `voices` prop with this structure:
+
+    ```typescript
+    {
+      voices: Array<{
+        name: string;    // Display name for the voice
+        url: string;     // Audio file URL from S3
+      }>
+    }
+    ```
+
+    Example usage in your MDX:
+    ```jsx
+    <AudioTranscript
+      voices={[
+        { name: "Natural Voice", url: "https://s3.../audio1.mp3" },
+        { name: "Professional Voice", url: "https://s3.../audio2.mp3" }
+      ]}
+    />
+    ```
+  </Step>
+
+  <Step title="Generate audio for your docs">
+    Run the generator on your documentation directory:
+
+    ```bash
+    npx speak-mintlify generate .
+    ```
+
+    If your documentation is in a subdirectory:
+
+    ```bash
+    npx speak-mintlify generate ./docs
+    ```
+
+    <Tip>
+      Use `--dry-run` to preview what changes will be made before generating:
+      ```bash
+      npx speak-mintlify generate . --dry-run
+      ```
+    </Tip>
+  </Step>
+
+  <Step title="Verify the results">
+    Check your MDX files to see the injected audio components. You should see something like:
+
+    ```jsx
+    <AudioTranscript
+      voices={[
+        { name: "E-girl", url: "https://your-cdn.com/audio/abc123.mp3" },
+        { name: "Adrian", url: "https://your-cdn.com/audio/def456.mp3" }
+      ]}
+    />
+    ```
+
+    Preview your documentation locally to test the audio playback.
+  </Step>
+</Steps>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Installation" icon="download" href="/installation">
+    Learn about different installation options and requirements
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/speaker-config">
+    Explore advanced configuration options for voices, S3, and components
+  </Card>
+  <Card title="CI/CD Integration" icon="code-branch" href="/guides/ci-cd-integration">
+    Automate audio generation with GitHub Actions or other CI/CD tools
+  </Card>
+  <Card title="Commands" icon="terminal" href="/commands/generate">
+    See all available commands and options
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="Audio files not uploading to S3">
+    Verify your S3 credentials in `.env` are correct and that your bucket has the proper permissions. Test with `--verbose` flag to see detailed error messages.
+  </Accordion>
+
+  <Accordion title="Component not appearing in MDX files">
+    Make sure the component import path in `speaker-config.yaml` matches your actual component location. The component will be automatically injected at the top of each MDX file.
+  </Accordion>
+
+  <Accordion title="Audio regenerating every time">
+    This usually means the hash tracking isn't working properly. Check that you have write permissions in your documentation directory for the hash cache file.
+  </Accordion>
+</AccordionGroup>

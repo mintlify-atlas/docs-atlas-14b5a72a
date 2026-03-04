@@ -1,0 +1,345 @@
+---
+title: Fish Audio Setup
+description: Get started with Fish Audio API, choose voices, and configure TTS generation
+---
+
+`speak-mintlify` uses [Fish Audio](https://fish.audio) to generate high-quality, natural-sounding TTS audio for your documentation.
+
+## Why Fish Audio?
+
+Fish Audio provides:
+- **Affordable pricing** - Cost-effective compared to other TTS providers
+- **Natural voices** - High-quality, human-like speech
+- **Multiple voices** - Wide selection of voices in different languages
+- **Developer-friendly** - Simple API with good documentation
+- **Fast generation** - Quick audio generation with built-in retry handling
+
+## Getting Your API Key
+
+<Steps>
+  <Step title="Create an account">
+    Visit [fish.audio](https://fish.audio) and sign up for an account.
+  </Step>
+
+  <Step title="Navigate to API settings">
+    Once logged in, go to your account settings or dashboard to find the API section.
+  </Step>
+
+  <Step title="Generate API key">
+    Create a new API key for your documentation project. Give it a descriptive name like "docs-tts" to identify it later.
+  </Step>
+
+  <Step title="Save your key securely">
+    Copy the API key and store it securely. You'll need it for your `.env` file or CI/CD secrets.
+
+    ```bash .env
+    FISH_API_KEY=your_api_key_here
+    ```
+
+    <Warning>
+      Never commit your API key to version control. Always use environment variables or secrets management.
+    </Warning>
+  </Step>
+</Steps>
+
+## Choosing Voices
+
+Fish Audio offers a variety of voices. Browse available voices on the [Fish Audio platform](https://fish.audio).
+
+### Finding Voice IDs
+
+<Steps>
+  <Step title="Browse voice library">
+    Explore the Fish Audio voice library to find voices that match your brand and audience.
+  </Step>
+
+  <Step title="Preview voices">
+    Listen to voice samples to find the right tone and style for your documentation.
+  </Step>
+
+  <Step title="Copy voice IDs">
+    Each voice has a unique ID (a long hexadecimal string). Copy the IDs of voices you want to use.
+
+    Example voice IDs:
+    - `8ef4a238714b45718ce04243307c57a7`
+    - `bf322df2096a46f18c579d0baa36f41d`
+    - `933563129e564b19a115bedd57b7406a`
+  </Step>
+</Steps>
+
+### Configuring Voices
+
+Add voices to your `speaker-config.yaml`:
+
+```yaml speaker-config.yaml
+voices:
+  8ef4a238714b45718ce04243307c57a7: Professional Female
+  bf322df2096a46f18c579d0baa36f41d: Casual Male
+  933563129e564b19a115bedd57b7406a: Energetic Narrator
+  b347db033a6549378b48d00acb0d06cd: Technical Guide
+```
+
+<Tip>
+  Voice names (right side) are what users see in the audio player. Choose descriptive names that help users select the right voice for them.
+</Tip>
+
+## Voice Configuration Examples
+
+<Tabs>
+  <Tab title="Single Voice">
+    For a consistent experience, use a single voice:
+
+    ```yaml speaker-config.yaml
+    voices:
+      8ef4a238714b45718ce04243307c57a7: Documentation Voice
+    ```
+
+    Users won't see a voice selector - the audio player will use this voice automatically.
+  </Tab>
+
+  <Tab title="Multiple Voices">
+    Offer variety with multiple voices:
+
+    ```yaml speaker-config.yaml
+    voices:
+      8ef4a238714b45718ce04243307c57a7: Sarah
+      bf322df2096a46f18c579d0baa36f41d: Adrian
+      933563129e564b19a115bedd57b7406a: Alex
+    ```
+
+    The audio player will show a dropdown for voice selection.
+  </Tab>
+
+  <Tab title="Multilingual">
+    Support multiple languages:
+
+    ```yaml speaker-config.yaml
+    voices:
+      8ef4a238714b45718ce04243307c57a7: English (US)
+      a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6: Spanish (ES)
+      b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7: French (FR)
+      c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8: German (DE)
+    ```
+
+    <Note>
+      Make sure your MDX content is in the appropriate language for each voice.
+    </Note>
+  </Tab>
+
+  <Tab title="Branded">
+    Use custom names that match your brand:
+
+    ```yaml speaker-config.yaml
+    voices:
+      8ef4a238714b45718ce04243307c57a7: Tech Guide
+      bf322df2096a46f18c579d0baa36f41d: Developer Buddy
+      933563129e564b19a115bedd57b7406a: Quick Start Voice
+    ```
+  </Tab>
+</Tabs>
+
+## Testing Voice Configuration
+
+Before committing to production, test your voice configuration:
+
+<CodeGroup>
+  ```bash Dry Run
+  # Preview what will be generated without making changes
+  npx speak-mintlify generate . --dry-run --verbose
+  ```
+
+  ```bash Single File Test
+  # Test with a specific file pattern
+  npx speak-mintlify generate . --pattern "getting-started.mdx"
+  ```
+
+  ```bash CLI Override
+  # Test specific voices via CLI (bypasses config file)
+  npx speak-mintlify generate . \
+    --voices "voice_id_1,voice_id_2" \
+    --voice-names "Voice 1,Voice 2"
+  ```
+</CodeGroup>
+
+## API Usage and Rate Limits
+
+<Warning>
+  Monitor your Fish Audio API usage to avoid unexpected costs or rate limiting.
+</Warning>
+
+### Estimating Costs
+
+Fish Audio charges based on characters processed. Estimate your costs:
+
+1. **Count documentation characters**: Run with `--verbose` to see extracted text
+2. **Multiply by voices**: Each voice generates separate audio
+3. **Check pricing**: Visit Fish Audio pricing page for current rates
+
+```bash
+# See how much text will be processed
+npx speak-mintlify generate . --dry-run --verbose
+```
+
+### Optimizing Usage
+
+<CardGroup cols={2}>
+  <Card title="Smart Regeneration" icon="brain">
+    `speak-mintlify` only regenerates audio when content changes, saving API calls and costs.
+  </Card>
+
+  <Card title="Limit Voices" icon="users">
+    Start with 1-2 voices. Add more only if users request variety.
+  </Card>
+
+  <Card title="Exclude Pages" icon="file-excel">
+    Use `.speakignore` to skip API reference, snippets, or other pages that don't benefit from audio.
+  </Card>
+
+  <Card title="File Patterns" icon="filter">
+    Use `--pattern` to generate audio only for specific sections.
+  </Card>
+</CardGroup>
+
+### Using .speakignore
+
+Exclude files and directories from TTS generation:
+
+```text .speakignore
+# Exclude API reference (better suited for interactive docs)
+api-reference/**
+
+# Exclude snippets (reusable components)
+snippets/**
+
+# Exclude changelog
+CHANGELOG.md
+
+# Exclude drafts
+drafts/**
+todo/**
+
+# Exclude specific pages
+terms-of-service.mdx
+privacy-policy.mdx
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="API key not working">
+    Common issues:
+    - Key not set in environment: Check `.env` file or CI/CD secrets
+    - Typo in key: Copy-paste carefully, avoid trailing spaces
+    - Key expired or revoked: Generate a new key
+    - Account not activated: Complete Fish Audio account setup
+
+    Test your key:
+    ```bash
+    # Should show error if key is invalid
+    npx speak-mintlify generate . --pattern "test.mdx"
+    ```
+  </Accordion>
+
+  <Accordion title="Voice IDs not found">
+    If you get voice not found errors:
+    - Verify voice IDs are copied correctly (case-sensitive)
+    - Check that voices haven't been removed from Fish Audio
+    - Ensure voice IDs match your account/plan
+    - Try generating with a single known-good voice first
+  </Accordion>
+
+  <Accordion title="TTS generation fails intermittently">
+    `speak-mintlify` has built-in retry logic (3 attempts), but if issues persist:
+    - Check Fish Audio status page for outages
+    - Verify your network connection
+    - Check API rate limits
+    - Try again during off-peak hours
+
+    The tool will show retry attempts:
+    ```
+    TTS attempt 1 failed. 2 retries left.
+    ```
+  </Accordion>
+
+  <Accordion title="Audio quality issues">
+    If generated audio sounds unnatural:
+    - Try different voices - quality varies
+    - Check source text for markdown artifacts
+    - Ensure text is properly extracted (use `--verbose`)
+    - Report persistent issues to Fish Audio support
+  </Accordion>
+
+  <Accordion title="Missing voices in audio player">
+    If the audio player doesn't show all voices:
+    - Check `speaker-config.yaml` syntax (proper YAML format)
+    - Verify voice IDs are valid hexadecimal strings
+    - Ensure voice names don't contain special characters
+    - Check browser console for errors
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Configuration
+
+### CLI Override
+
+Override `speaker-config.yaml` from the command line:
+
+```bash
+npx speak-mintlify generate . \
+  --voices "8ef4a238714b45718ce04243307c57a7,bf322df2096a46f18c579d0baa36f41d" \
+  --voice-names "Production Voice,Testing Voice" \
+  --api-key "your_api_key"
+```
+
+<Tip>
+  CLI flags take priority over config files, useful for testing or one-off generation.
+</Tip>
+
+### Environment Variables
+
+Set Fish API key via environment variable:
+
+```bash
+# Local development
+export FISH_API_KEY=your_key
+npx speak-mintlify generate .
+
+# One-time use
+FISH_API_KEY=your_key npx speak-mintlify generate .
+```
+
+## Best Practices
+
+<Steps>
+  <Step title="Start simple">
+    Begin with 1-2 voices. Add more based on user feedback.
+  </Step>
+
+  <Step title="Use descriptive names">
+    Help users choose voices with clear, descriptive names ("Professional Female" vs "Voice 1").
+  </Step>
+
+  <Step title="Test before deploying">
+    Always use `--dry-run` to preview changes before generating audio.
+  </Step>
+
+  <Step title="Monitor usage">
+    Keep track of API usage and costs, especially with multiple voices.
+  </Step>
+
+  <Step title="Exclude unnecessary pages">
+    Use `.speakignore` to skip pages that don't need audio.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="S3 Setup" icon="database" href="/guides/s3-setup">
+    Configure storage for your generated audio files
+  </Card>
+
+  <Card title="Customization" icon="palette" href="/guides/customization">
+    Customize audio player appearance and behavior
+  </Card>
+</CardGroup>

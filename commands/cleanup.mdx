@@ -1,0 +1,340 @@
+---
+title: 'cleanup'
+description: 'Remove orphaned audio files from S3 storage'
+---
+
+The `cleanup` command scans your MDX documentation files to identify which audio files are currently referenced, then removes any orphaned files from S3 storage that are no longer used. This helps keep your storage clean and reduces costs.
+
+## Usage
+
+```bash
+speak-mintlify cleanup [directory] [options]
+```
+
+### Arguments
+
+<ParamField path="directory" type="string" default=".">
+  Directory containing MDX files to scan for audio references. Defaults to current directory.
+</ParamField>
+
+## Options
+
+### S3 Storage Configuration
+
+<ParamField path="--s3-bucket" type="string" required>
+  S3 bucket name where audio files are stored.
+  
+  Alternative: Set `S3_BUCKET` environment variable.
+</ParamField>
+
+<ParamField path="--s3-region" type="string" default="us-east-1">
+  AWS region for your S3 bucket.
+  
+  Alternative: Set `S3_REGION` environment variable.
+</ParamField>
+
+<ParamField path="--s3-endpoint" type="string">
+  Custom S3 endpoint URL. Required for S3-compatible services like Cloudflare R2, MinIO, or DigitalOcean Spaces.
+  
+  Example: `--s3-endpoint "https://account-id.r2.cloudflarestorage.com"`
+  
+  Alternative: Set `S3_ENDPOINT` environment variable.
+</ParamField>
+
+<ParamField path="--s3-access-key-id" type="string" required>
+  S3 access key ID for authentication.
+  
+  Alternative: Set `S3_ACCESS_KEY_ID` environment variable.
+</ParamField>
+
+<ParamField path="--s3-secret-access-key" type="string" required>
+  S3 secret access key for authentication.
+  
+  Alternative: Set `S3_SECRET_ACCESS_KEY` environment variable.
+</ParamField>
+
+<ParamField path="--s3-public-url" type="string" required>
+  Public CDN URL used to access audio files. This must match the URL used during generation.
+  
+  Example: `--s3-public-url "https://cdn.example.com"`
+  
+  Alternative: Set `S3_PUBLIC_URL` environment variable.
+</ParamField>
+
+<ParamField path="--s3-path-prefix" type="string" default="audio">
+  Directory prefix where audio files are organized in S3. Must match the prefix used during generation.
+  
+  Example: `audio` (files stored as `audio/page-slug/voice-id.mp3`)
+</ParamField>
+
+### Component Configuration
+
+<ParamField path="--component-name" type="string" default="AudioTranscript">
+  Name of the audio player component to search for in MDX files. Must match the component name used during generation.
+  
+  Example: `--component-name "AudioPlayer"`
+</ParamField>
+
+### File Selection
+
+<ParamField path="--pattern" type="string" default="**/*.mdx">
+  Glob pattern for selecting MDX files to scan.
+  
+  Examples:
+  - `**/*.mdx` - All MDX files recursively
+  - `docs/**/*.mdx` - Only files in docs directory
+  - `guides/*.mdx` - Only top-level guides
+</ParamField>
+
+### Execution Options
+
+<ParamField path="--dry-run" type="boolean" default={false}>
+  Preview orphaned files without deleting them. Shows which files would be removed.
+  
+  Useful for:
+  - Verifying cleanup targets before deletion
+  - Auditing storage usage
+  - Testing configuration
+</ParamField>
+
+<ParamField path="--verbose" type="boolean" default={false}>
+  Show detailed information about the cleanup process.
+</ParamField>
+
+## Examples
+
+### Basic Usage
+
+Clean up orphaned files in current directory:
+
+```bash
+speak-mintlify cleanup
+```
+
+### Specify Directory
+
+Clean up based on MDX files in a specific directory:
+
+```bash
+speak-mintlify cleanup ./docs
+```
+
+### Dry Run Preview
+
+Preview orphaned files without deleting:
+
+```bash
+speak-mintlify cleanup --dry-run
+```
+
+Output:
+```
+✔ Found 15 MDX file(s)
+✔ Found 20 audio file(s) referenced in MDX files
+✔ Found 25 audio file(s) in S3
+
+Found 5 orphaned file(s):
+
+  - audio/old-page/voice-1.mp3
+  - audio/old-page/voice-2.mp3
+  - audio/deleted-guide/voice-1.mp3
+  - audio/renamed-page/voice-1.mp3
+  - audio/test/voice-1.mp3
+
+Dry run complete. Run without --dry-run to delete these files.
+```
+
+### Complete Configuration
+
+Full command with all options:
+
+```bash
+speak-mintlify cleanup ./docs \
+  --s3-bucket "my-docs-audio" \
+  --s3-region "us-west-2" \
+  --s3-access-key-id "AKIAIOSFODNN7EXAMPLE" \
+  --s3-secret-access-key "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
+  --s3-public-url "https://cdn.example.com" \
+  --s3-path-prefix "audio" \
+  --component-name "AudioTranscript" \
+  --verbose
+```
+
+### Using Cloudflare R2
+
+```bash
+speak-mintlify cleanup \
+  --s3-bucket "my-bucket" \
+  --s3-endpoint "https://account-id.r2.cloudflarestorage.com" \
+  --s3-public-url "https://pub-123.r2.dev"
+```
+
+### Specific File Pattern
+
+Clean up based on files in a specific subdirectory:
+
+```bash
+speak-mintlify cleanup --pattern "guides/**/*.mdx"
+```
+
+## How It Works
+
+1. **File Discovery**: Scans for MDX files matching the specified pattern
+2. **Reference Extraction**: Parses each MDX file to find audio player components
+3. **URL Collection**: Extracts audio file URLs from component props
+4. **S3 Listing**: Lists all audio files in the S3 bucket with the specified prefix
+5. **Comparison**: Identifies files in S3 that aren't referenced in any MDX file
+6. **Deletion**: Removes orphaned files (unless `--dry-run` is specified)
+
+## When to Use Cleanup
+
+Run cleanup when:
+
+- **Pages are deleted**: Audio files remain in S3 after removing documentation pages
+- **Pages are renamed**: Old audio files under the previous slug are orphaned
+- **Voice configuration changes**: Removing voices leaves old audio files
+- **Content is restructured**: Moving or reorganizing pages creates orphans
+- **Regular maintenance**: Periodic cleanup to optimize storage costs
+
+## Output
+
+Successful cleanup shows detailed progress:
+
+```
+✔ Initializing...
+✔ Found 10 MDX file(s)
+✔ Found 15 audio file(s) referenced in MDX files
+✔ Found 20 audio file(s) in S3
+
+Found 5 orphaned file(s):
+
+  - audio/old-page/voice-1.mp3
+  - audio/old-page/voice-2.mp3
+  - audio/deleted-guide/voice-1.mp3
+
+✔ Deleted 5 orphaned file(s)
+
+Summary:
+  MDX files scanned: 10
+  Audio files referenced: 15
+  Total S3 files: 20
+  Orphaned files deleted: 5
+```
+
+When no orphaned files exist:
+
+```
+✔ No orphaned files found! S3 is clean.
+```
+
+## Safety Features
+
+- **Dry run by default is recommended**: Always test with `--dry-run` first
+- **Explicit deletion**: Files are only deleted when `--dry-run` is false
+- **Detailed preview**: See exactly which files will be removed
+- **Pattern matching**: Only processes MDX files matching your pattern
+- **Component-aware**: Only removes files not referenced in audio components
+
+## Best Practices
+
+### 1. Always Test First
+
+```bash
+# Preview changes
+speak-mintlify cleanup --dry-run
+
+# Review the list carefully
+# Then execute
+speak-mintlify cleanup
+```
+
+### 2. Match Generation Config
+
+Ensure cleanup uses the same configuration as generation:
+
+```bash
+# Both commands should use matching values
+speak-mintlify generate --s3-path-prefix "audio" --component-name "AudioTranscript"
+speak-mintlify cleanup --s3-path-prefix "audio" --component-name "AudioTranscript"
+```
+
+### 3. Regular Maintenance
+
+Schedule periodic cleanup:
+
+```bash
+# Add to CI/CD pipeline or cron job
+speak-mintlify cleanup --dry-run || echo "Orphaned files detected"
+```
+
+### 4. Use Environment Variables
+
+Set common S3 config once:
+
+```bash
+export S3_BUCKET="my-docs-audio"
+export S3_REGION="us-east-1"
+export S3_ACCESS_KEY_ID="your-access-key"
+export S3_SECRET_ACCESS_KEY="your-secret-key"
+export S3_PUBLIC_URL="https://cdn.example.com"
+
+# Run cleanup with minimal options
+speak-mintlify cleanup
+```
+
+## Error Handling
+
+Common errors and solutions:
+
+- **S3 authentication failed**: Verify access key ID and secret access key
+- **Bucket not found**: Check bucket name and region
+- **No files found**: Verify directory path and glob pattern
+- **Permission denied**: Ensure S3 credentials have delete permissions
+- **Endpoint error**: Verify S3 endpoint URL for R2/MinIO
+
+## Cost Optimization
+
+Cleanup helps reduce costs by:
+
+- **Removing unused storage**: Delete orphaned audio files
+- **Reducing bandwidth**: Fewer files to sync and back up
+- **Optimizing listings**: Faster S3 list operations with fewer objects
+- **Preventing bloat**: Keep storage lean as documentation evolves
+
+## Advanced Usage
+
+### Cleanup Specific Prefix
+
+Target a specific section:
+
+```bash
+speak-mintlify cleanup \
+  --pattern "guides/**/*.mdx" \
+  --s3-path-prefix "audio/guides"
+```
+
+### Integration with CI/CD
+
+Automate cleanup after deployments:
+
+```yaml
+# GitHub Actions example
+- name: Cleanup orphaned audio
+  run: |
+    npm install -g speak-mintlify
+    speak-mintlify cleanup --verbose
+  env:
+    FISH_API_KEY: ${{ secrets.FISH_API_KEY }}
+    S3_BUCKET: ${{ secrets.S3_BUCKET }}
+    S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+    S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+```
+
+### Audit Storage Usage
+
+Use dry run for regular audits:
+
+```bash
+# Check for orphaned files weekly
+speak-mintlify cleanup --dry-run --verbose | tee storage-audit.log
+```

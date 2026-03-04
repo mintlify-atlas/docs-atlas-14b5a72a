@@ -1,97 +1,282 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: speak-mintlify
+description: Add voice narration to your Mintlify documentation
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#0f1117] via-[#1a1d27] to-[#0f1117] dark:bg-gradient-to-br dark:from-[#0f1117] dark:via-[#1a1d27] dark:to-[#0f1117] py-20">
+  <div className="max-w-6xl mx-auto px-6 lg:px-8">
+    <div className="grid lg:grid-cols-12 gap-8 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white dark:text-white mb-6">
+          Add voice narration to your documentation
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-300 dark:text-gray-300 max-w-2xl mb-8">
+          Automatically generate high-quality text-to-speech audio for your Mintlify docs. Drive developer engagement and improve accessibility with natural-sounding voices.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a
+            href="/quickstart"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-[#a1a2a4] hover:bg-[#8a8b8d] rounded-lg transition-colors no-underline"
+          >
+            Get Started
+          </a>
+          <a
+            href="/commands/generate"
+            className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white border border-white/30 bg-white/10 hover:bg-white/20 rounded-lg transition-colors no-underline"
+          >
+            View Commands
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#a1a2a4]/20 to-transparent rounded-2xl blur-3xl" />
+          <div className="relative bg-[#1a1d27] dark:bg-[#1a1d27] border border-[#27272a] dark:border-[#27272a] rounded-2xl p-6">
+            <div className="text-sm text-gray-400 dark:text-gray-400 mb-2">Terminal</div>
+            <pre className="text-green-400 dark:text-green-400 text-sm overflow-x-auto">
+              <code>{`$ npx speak-mintlify generate .
 
-Get your documentation site up and running in minutes.
+✓ Found 24 MDX file(s)
+✓ Generated TTS for introduction.mdx
+✓ Generated TTS for quickstart.mdx
+✓ Generated TTS for api-reference.mdx
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Successfully processed: 24
+Skipped: 0`}</code>
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-## Make it yours
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+    Quick Start
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Get voice narration running on your docs in minutes.
+  </p>
 
-Design a docs site that looks great and empowers your users.
+  <Steps>
+    <Step title="Install speak-mintlify">
+      Install the CLI tool using npm, yarn, or pnpm.
+      
+      <CodeGroup>
+      ```bash npm
+      npm install -g speak-mintlify
+      ```
+      ```bash yarn
+      yarn global add speak-mintlify
+      ```
+      ```bash pnpm
+      pnpm add -g speak-mintlify
+      ```
+      </CodeGroup>
+    </Step>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
+    <Step title="Configure your voices and S3 storage">
+      Create a `speaker-config.yaml` file to define your voices and set up environment variables for Fish Audio API and S3 storage.
+      
+      ```yaml speaker-config.yaml
+      voices:
+        8ef4a238714b45718ce04243307c57a7: E-girl
+        bf322df2096a46f18c579d0baa36f41d: Adrian
+      
+      component:
+        import: /snippets/audio-transcript.jsx
+        name: AudioTranscript
+      ```
+      
+      <Tip>
+        Get your Fish Audio API key from [Fish Audio](https://fish.audio). S3-compatible storage includes Cloudflare R2, MinIO, and AWS S3.
+      </Tip>
+    </Step>
+
+    <Step title="Generate audio for your docs">
+      Run the generate command to create TTS audio for all your MDX files.
+      
+      ```bash
+      npx speak-mintlify generate .
+      ```
+      
+      The CLI will extract text from your MDX files, generate audio using Fish Audio, upload to S3, and inject audio player components automatically.
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+    Key Features
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Everything you need to add voice narration to your documentation.
+  </p>
+
+  <CardGroup cols={2}>
     <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+      title="Smart Caching"
+      icon="brain"
+      href="/commands/generate"
+    >
+      Hash-based caching regenerates audio only when content changes, saving API costs and build time.
+    </Card>
+    <Card
+      title="Multiple Voices"
+      icon="users"
+      href="/configuration/speaker-config"
+    >
+      Support multiple voices with easy YAML configuration. Perfect for different content types or languages.
+    </Card>
+    <Card
+      title="S3 Compatible"
+      icon="cloud"
+      href="/guides/s3-setup"
+    >
+      Upload to Cloudflare R2, MinIO, AWS S3, or any S3-compatible storage provider.
+    </Card>
+    <Card
+      title="Auto Injection"
+      icon="wand-magic-sparkles"
+      href="/configuration/audio-component"
+    >
+      Automatically inject audio player components into your MDX files with proper metadata.
+    </Card>
+    <Card
+      title="CI/CD Ready"
+      icon="circle-play"
+      href="/guides/ci-cd-integration"
+    >
+      Integrate seamlessly into GitHub Actions or any CI/CD pipeline with dry-run mode.
+    </Card>
+    <Card
+      title="Cleanup Orphans"
+      icon="trash"
+      href="/commands/cleanup"
+    >
+      Remove unused audio files from S3 to keep storage costs low and maintain a clean bucket.
+    </Card>
+  </CardGroup>
+</div>
 
-## Create beautiful pages
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+    Explore by Topic
+  </h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+    Dive deeper into configuration, commands, and integration guides.
+  </p>
 
-Everything you need to create world-class documentation.
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a
+      href="/configuration/speaker-config"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#a1a2a4] dark:hover:border-[#a1a2a4] overflow-hidden transition-colors no-underline"
+    >
+      <div className="h-32 bg-gradient-to-br from-[#a1a2a4]/10 to-transparent dark:from-[#a1a2a4]/10 dark:to-transparent flex items-center justify-center overflow-hidden">
+        <div className="text-6xl opacity-50">🎙️</div>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#a1a2a4] dark:group-hover:text-[#a1a2a4] transition-colors">
+          Configuration
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Configure voices, environment variables, and audio components for your documentation.
+        </p>
+        <div className="flex items-center text-sm text-[#a1a2a4] dark:text-[#a1a2a4] group-hover:translate-x-1 transition-transform">
+          Learn more
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+    <a
+      href="/commands/generate"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#a1a2a4] dark:hover:border-[#a1a2a4] overflow-hidden transition-colors no-underline"
+    >
+      <div className="h-32 bg-gradient-to-br from-[#a1a2a4]/10 to-transparent dark:from-[#a1a2a4]/10 dark:to-transparent flex items-center justify-center overflow-hidden">
+        <div className="text-6xl opacity-50">⚡</div>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#a1a2a4] dark:group-hover:text-[#a1a2a4] transition-colors">
+          CLI Commands
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Master the generate and cleanup commands with all available options and flags.
+        </p>
+        <div className="flex items-center text-sm text-[#a1a2a4] dark:text-[#a1a2a4] group-hover:translate-x-1 transition-transform">
+          View commands
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-## Need inspiration?
+    <a
+      href="/guides/ci-cd-integration"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#a1a2a4] dark:hover:border-[#a1a2a4] overflow-hidden transition-colors no-underline"
+    >
+      <div className="h-32 bg-gradient-to-br from-[#a1a2a4]/10 to-transparent dark:from-[#a1a2a4]/10 dark:to-transparent flex items-center justify-center overflow-hidden">
+        <div className="text-6xl opacity-50">🚀</div>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#a1a2a4] dark:group-hover:text-[#a1a2a4] transition-colors">
+          CI/CD Integration
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Automate voice generation in GitHub Actions or your preferred CI/CD pipeline.
+        </p>
+        <div className="flex items-center text-sm text-[#a1a2a4] dark:text-[#a1a2a4] group-hover:translate-x-1 transition-transform">
+          View guide
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    <a
+      href="/reference/typescript-types"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#a1a2a4] dark:hover:border-[#a1a2a4] overflow-hidden transition-colors no-underline"
+    >
+      <div className="h-32 bg-gradient-to-br from-[#a1a2a4]/10 to-transparent dark:from-[#a1a2a4]/10 dark:to-transparent flex items-center justify-center overflow-hidden">
+        <div className="text-6xl opacity-50">📚</div>
+      </div>
+      <div className="p-6 bg-white dark:bg-[#1a1d27]">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#a1a2a4] dark:group-hover:text-[#a1a2a4] transition-colors">
+          API Reference
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          TypeScript type definitions and architecture documentation for developers.
+        </p>
+        <div className="flex items-center text-sm text-[#a1a2a4] dark:text-[#a1a2a4] group-hover:translate-x-1 transition-transform">
+          Explore reference
+          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="bg-gradient-to-br from-[#a1a2a4]/10 to-transparent dark:from-[#a1a2a4]/10 dark:to-transparent border border-gray-200 dark:border-[#27272a] rounded-2xl p-8 text-center">
+    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+      Ready to add voice to your docs?
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
+      Get started with speak-mintlify in minutes. Generate high-quality voice narration powered by Fish Audio.
+    </p>
+    <a
+      href="/quickstart"
+      className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-[#a1a2a4] hover:bg-[#8a8b8d] rounded-lg transition-colors no-underline"
+    >
+      Get Started Now
+    </a>
+  </div>
+</div>

@@ -1,0 +1,502 @@
+---
+title: S3 Storage Setup
+description: Configure S3-compatible storage for audio files with AWS S3, Cloudflare R2, or MinIO
+---
+
+`speak-mintlify` uploads generated audio files to S3-compatible storage for efficient delivery. This guide covers setup for AWS S3, Cloudflare R2, and self-hosted MinIO.
+
+## Storage Providers Overview
+
+<CardGroup cols={3}>
+  <Card title="AWS S3" icon="aws">
+    Industry standard, global CDN, pay-per-use pricing
+  </Card>
+
+  <Card title="Cloudflare R2" icon="cloudflare">
+    Zero egress fees, fast global delivery, simple pricing
+  </Card>
+
+  <Card title="MinIO" icon="server">
+    Self-hosted, full control, no vendor lock-in
+  </Card>
+</CardGroup>
+
+## AWS S3 Setup
+
+<Steps>
+  <Step title="Create an S3 bucket">
+    1. Log in to [AWS Console](https://console.aws.amazon.com/s3/)
+    2. Click **Create bucket**
+    3. Choose a unique bucket name (e.g., `my-docs-audio`)
+    4. Select a region close to your users (e.g., `us-east-1`)
+    5. **Uncheck** "Block all public access" (we need public read access)
+    6. Click **Create bucket**
+  </Step>
+
+  <Step title="Configure bucket policy">
+    Add a bucket policy to allow public read access:
+
+    1. Go to your bucket → **Permissions** → **Bucket Policy**
+    2. Add this policy (replace `YOUR_BUCKET_NAME`):
+
+    ```json
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Sid": "PublicReadGetObject",
+          "Effect": "Allow",
+          "Principal": "*",
+          "Action": "s3:GetObject",
+          "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+        }
+      ]
+    }
+    ```
+
+    <Warning>
+      This allows public read access to all files in the bucket. Only upload files you want to be publicly accessible.
+    </Warning>
+  </Step>
+
+  <Step title="Create IAM user">
+    Create an IAM user with programmatic access:
+
+    1. Go to [IAM Console](https://console.aws.amazon.com/iam/) → **Users**
+    2. Click **Add users**
+    3. User name: `speak-mintlify-uploader`
+    4. Select **Access key - Programmatic access**
+    5. Click **Next: Permissions**
+  </Step>
+
+  <Step title="Attach permissions">
+    Create an inline policy with these permissions:
+
+    ```json
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:PutObject",
+            "s3:ListBucket",
+            "s3:DeleteObject"
+          ],
+          "Resource": [
+            "arn:aws:s3:::YOUR_BUCKET_NAME",
+            "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+          ]
+        }
+      ]
+    }
+    ```
+
+    Complete the user creation and **save the Access Key ID and Secret Access Key**.
+  </Step>
+
+  <Step title="Configure environment variables">
+    Add credentials to your `.env` file:
+
+    ```bash .env
+    # AWS S3 Configuration
+    S3_ACCESS_KEY_ID=AKIA...
+    S3_SECRET_ACCESS_KEY=your_secret_key
+    S3_BUCKET=my-docs-audio
+    S3_REGION=us-east-1
+    S3_PUBLIC_URL=https://my-docs-audio.s3.us-east-1.amazonaws.com
+
+    # No S3_ENDPOINT needed for AWS S3
+    ```
+  </Step>
+</Steps>
+
+### Optional: CloudFront CDN
+
+For better performance, serve audio through CloudFront:
+
+<Steps>
+  <Step title="Create CloudFront distribution">
+    1. Go to [CloudFront Console](https://console.aws.amazon.com/cloudfront/)
+    2. Click **Create distribution**
+    3. **Origin domain**: Select your S3 bucket
+    4. **Origin access**: Legacy access identities → Create new OAI
+    5. **Viewer protocol policy**: Redirect HTTP to HTTPS
+    6. Click **Create distribution**
+  </Step>
+
+  <Step title="Update bucket policy">
+    CloudFront will update your bucket policy automatically. Remove the public access policy if using CloudFront exclusively.
+  </Step>
+
+  <Step title="Update S3_PUBLIC_URL">
+    Use your CloudFront domain:
+
+    ```bash .env
+    S3_PUBLIC_URL=https://d123456789.cloudfront.net
+    ```
+  </Step>
+</Steps>
+
+## Cloudflare R2 Setup
+
+Cloudflare R2 offers zero egress fees and is more cost-effective for high-traffic sites.
+
+<Steps>
+  <Step title="Create R2 bucket">
+    1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/)
+    2. Go to **R2** from the sidebar
+    3. Click **Create bucket**
+    4. Enter bucket name (e.g., `docs-audio`)
+    5. Choose a location hint (optional)
+    6. Click **Create bucket**
+  </Step>
+
+  <Step title="Enable public access">
+    1. Go to your bucket → **Settings**
+    2. Scroll to **Public access**
+    3. Click **Allow Access** and confirm
+    4. Copy the **Public bucket URL** (e.g., `https://pub-abc123.r2.dev`)
+  </Step>
+
+  <Step title="Create API token">
+    1. Go to **R2** → **Manage R2 API Tokens**
+    2. Click **Create API token**
+    3. Token name: `speak-mintlify`
+    4. Permissions: **Object Read & Write**
+    5. (Optional) Apply to specific buckets only
+    6. Click **Create API token**
+    7. **Save the Access Key ID and Secret Access Key**
+  </Step>
+
+  <Step title="Configure environment variables">
+    Add R2 credentials to your `.env` file:
+
+    ```bash .env
+    # Cloudflare R2 Configuration
+    S3_ACCESS_KEY_ID=your_access_key_id
+    S3_SECRET_ACCESS_KEY=your_secret_access_key
+    S3_BUCKET=docs-audio
+    S3_REGION=auto
+    S3_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+    S3_PUBLIC_URL=https://pub-abc123.r2.dev
+    ```
+
+    <Note>
+      Replace `<account_id>` with your Cloudflare account ID (found in R2 settings).
+    </Note>
+  </Step>
+</Steps>
+
+### Custom Domain for R2
+
+Use your own domain for cleaner URLs:
+
+<Steps>
+  <Step title="Add custom domain">
+    1. Go to your R2 bucket → **Settings** → **Custom Domains**
+    2. Click **Connect domain**
+    3. Enter your domain (e.g., `audio.docs.com`)
+    4. Follow DNS setup instructions
+  </Step>
+
+  <Step title="Update S3_PUBLIC_URL">
+    ```bash .env
+    S3_PUBLIC_URL=https://audio.docs.com
+    ```
+  </Step>
+</Steps>
+
+## MinIO Setup (Self-Hosted)
+
+MinIO is perfect for self-hosted or on-premise deployments.
+
+<Steps>
+  <Step title="Install MinIO">
+    <Tabs>
+      <Tab title="Docker">
+        ```bash
+        docker run -d \
+          -p 9000:9000 \
+          -p 9001:9001 \
+          --name minio \
+          -e "MINIO_ROOT_USER=admin" \
+          -e "MINIO_ROOT_PASSWORD=your_secure_password" \
+          -v /data/minio:/data \
+          minio/minio server /data --console-address ":9001"
+        ```
+      </Tab>
+
+      <Tab title="Binary">
+        ```bash
+        # Download MinIO
+        wget https://dl.min.io/server/minio/release/linux-amd64/minio
+        chmod +x minio
+
+        # Start MinIO
+        export MINIO_ROOT_USER=admin
+        export MINIO_ROOT_PASSWORD=your_secure_password
+        ./minio server /data --console-address ":9001"
+        ```
+      </Tab>
+
+      <Tab title="Kubernetes">
+        ```bash
+        # Using MinIO Operator
+        kubectl apply -k github.com/minio/operator
+
+        # Or using Helm
+        helm repo add minio https://charts.min.io/
+        helm install minio minio/minio \
+          --set rootUser=admin,rootPassword=your_secure_password
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Create bucket">
+    1. Access MinIO Console at `http://localhost:9001`
+    2. Login with root credentials
+    3. Go to **Buckets** → **Create Bucket**
+    4. Bucket name: `docs-audio`
+    5. Click **Create Bucket**
+  </Step>
+
+  <Step title="Set bucket to public">
+    1. Go to your bucket → **Anonymous** → **Add Access Rule**
+    2. Prefix: `*` (all objects)
+    3. Access: **readonly**
+    4. Click **Add**
+  </Step>
+
+  <Step title="Create access key">
+    1. Go to **Access Keys** → **Create access key**
+    2. Copy the **Access Key** and **Secret Key**
+    3. Click **Create**
+  </Step>
+
+  <Step title="Configure environment variables">
+    ```bash .env
+    # MinIO Configuration
+    S3_ACCESS_KEY_ID=your_access_key
+    S3_SECRET_ACCESS_KEY=your_secret_key
+    S3_BUCKET=docs-audio
+    S3_REGION=us-east-1
+    S3_ENDPOINT=http://localhost:9000
+    S3_PUBLIC_URL=http://localhost:9000/docs-audio
+    ```
+
+    <Tip>
+      For production, use HTTPS with a reverse proxy (nginx, Caddy) and a proper domain.
+    </Tip>
+  </Step>
+</Steps>
+
+## Testing Your Setup
+
+Verify your storage configuration works:
+
+<CodeGroup>
+  ```bash Test Upload
+  # Generate audio and upload to S3
+  npx speak-mintlify generate . --pattern "test.mdx"
+  ```
+
+  ```bash Dry Run
+  # Preview without uploading
+  npx speak-mintlify generate . --dry-run
+  ```
+
+  ```bash Cleanup Test
+  # Test cleanup (dry run first!)
+  npx speak-mintlify cleanup . --dry-run
+  ```
+</CodeGroup>
+
+Check that:
+1. Files upload successfully
+2. Public URLs are accessible
+3. Audio plays in your browser
+4. Cleanup correctly identifies orphaned files
+
+## Environment Variables Reference
+
+<ParamField path="S3_BUCKET" type="string" required>
+  Your S3 bucket name
+</ParamField>
+
+<ParamField path="S3_ACCESS_KEY_ID" type="string" required>
+  S3 access key ID (or R2/MinIO equivalent)
+</ParamField>
+
+<ParamField path="S3_SECRET_ACCESS_KEY" type="string" required>
+  S3 secret access key
+</ParamField>
+
+<ParamField path="S3_PUBLIC_URL" type="string" required>
+  Public URL where files are accessible. Examples:
+  - AWS S3: `https://bucket.s3.region.amazonaws.com`
+  - CloudFront: `https://d123.cloudfront.net`
+  - R2: `https://pub-abc.r2.dev`
+  - MinIO: `https://minio.example.com/bucket`
+</ParamField>
+
+<ParamField path="S3_REGION" type="string" default="us-east-1">
+  AWS region (or `auto` for R2)
+</ParamField>
+
+<ParamField path="S3_ENDPOINT" type="string">
+  Custom S3 endpoint (required for R2 and MinIO). Examples:
+  - R2: `https://abc123.r2.cloudflarestorage.com`
+  - MinIO: `https://minio.example.com`
+  - Not needed for AWS S3
+</ParamField>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Upload fails with 403 Forbidden">
+    **AWS S3:**
+    - Check IAM user has `s3:PutObject` permission
+    - Verify bucket name in IAM policy matches actual bucket
+    - Ensure access keys are correct
+
+    **Cloudflare R2:**
+    - Verify API token has "Object Read & Write" permissions
+    - Check token is applied to correct bucket
+    - Ensure endpoint URL includes account ID
+
+    **MinIO:**
+    - Check access key has write permissions
+    - Verify bucket policy allows uploads
+    - Check MinIO server is running
+  </Accordion>
+
+  <Accordion title="Public URLs return 403 or 404">
+    **Check public access:**
+    - AWS S3: Verify bucket policy allows public read
+    - R2: Ensure "Allow Access" is enabled
+    - MinIO: Check anonymous access rules
+
+    **Check URL format:**
+    - Remove trailing slashes from `S3_PUBLIC_URL`
+    - Verify bucket name is correct
+    - Test URL directly in browser
+  </Accordion>
+
+  <Accordion title="CORS errors in browser">
+    Add CORS configuration to your bucket:
+
+    **AWS S3:**
+    ```json
+    [
+      {
+        "AllowedHeaders": ["*"],
+        "AllowedMethods": ["GET"],
+        "AllowedOrigins": ["*"],
+        "ExposeHeaders": []
+      }
+    ]
+    ```
+
+    **Cloudflare R2:**
+    CORS is automatically configured for public buckets.
+
+    **MinIO:**
+    ```bash
+    mc alias set myminio http://localhost:9000 admin password
+    mc anonymous set-json policy.json myminio/docs-audio
+    ```
+  </Accordion>
+
+  <Accordion title="Connection timeout to S3_ENDPOINT">
+    - Verify endpoint URL is correct (including protocol)
+    - Check firewall/security groups allow connections
+    - For MinIO, ensure server is accessible from CI/CD
+    - Test with `curl` or `aws s3 ls`
+  </Accordion>
+
+  <Accordion title="Files uploaded but not accessible">
+    - Check `S3_PUBLIC_URL` matches actual public URL
+    - Verify content-type is set correctly (`audio/mpeg`)
+    - Check bucket/object ACLs (legacy AWS S3)
+    - Test URL in incognito/private browser
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use separate buckets" icon="folder-tree">
+    Keep audio files in a dedicated bucket separate from other assets for easier management.
+  </Card>
+
+  <Card title="Enable versioning" icon="clock-rotate-left">
+    Enable S3 versioning to recover from accidental deletions.
+  </Card>
+
+  <Card title="Set lifecycle policies" icon="recycle">
+    Automatically delete old versions or move to cheaper storage tiers.
+  </Card>
+
+  <Card title="Monitor costs" icon="dollar-sign">
+    Track storage and bandwidth usage, especially with AWS S3.
+  </Card>
+
+  <Card title="Use CDN" icon="bolt">
+    Serve through CloudFront, Cloudflare, or similar for better performance.
+  </Card>
+
+  <Card title="Secure credentials" icon="lock">
+    Never commit credentials. Use environment variables or secrets managers.
+  </Card>
+</CardGroup>
+
+## Cost Optimization
+
+<Tabs>
+  <Tab title="AWS S3">
+    - **Storage**: ~$0.023/GB/month (Standard)
+    - **Bandwidth**: $0.09/GB egress (first 10TB/month)
+    - **Requests**: Minimal cost for PUT/GET
+
+    **Optimize:**
+    - Use S3 Intelligent-Tiering for infrequently accessed files
+    - Enable CloudFront to reduce egress costs
+    - Set lifecycle rules to delete old versions
+  </Tab>
+
+  <Tab title="Cloudflare R2">
+    - **Storage**: $0.015/GB/month
+    - **Bandwidth**: **$0 egress** (unlimited free)
+    - **Requests**: $4.50 per million writes, $0.36 per million reads
+
+    **Best for:**
+    - High-traffic sites (free egress)
+    - Cost-sensitive projects
+    - Simple pricing needs
+  </Tab>
+
+  <Tab title="MinIO">
+    - **Storage**: Your infrastructure costs
+    - **Bandwidth**: No external costs
+    - **Requests**: No costs
+
+    **Best for:**
+    - On-premise deployments
+    - Complete control requirements
+    - Existing infrastructure
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fish Audio Setup" icon="microphone" href="/guides/fish-audio">
+    Configure Fish Audio API and choose voices
+  </Card>
+
+  <Card title="CI/CD Integration" icon="arrows-spin" href="/guides/ci-cd-integration">
+    Automate audio generation in your workflow
+  </Card>
+</CardGroup>

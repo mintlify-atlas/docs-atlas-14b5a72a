@@ -1,0 +1,66 @@
+---
+title: Introduction
+description: Add voice narration to your Mintlify documentation to drive developer engagement and accessibility
+---
+
+**speak-mintlify** intelligently generates text-to-speech audio for your Mintlify documentation using Fish Audio TTS.
+
+## What is speak-mintlify?
+
+speak-mintlify is a CLI tool that automatically creates voice narration for your documentation pages. It converts your MDX content into natural-sounding audio files, uploads them to S3-compatible storage, and injects audio player components directly into your documentation.
+
+The tool is built to be intelligent and efficient. It only regenerates audio when your content changes, tracks file hashes to avoid unnecessary API calls, and integrates seamlessly with your existing CI/CD pipelines.
+
+## Why use voice narration?
+
+Voice narration transforms how developers interact with your documentation:
+
+<CardGroup cols={2}>
+  <Card title="Accessibility" icon="universal-access">
+    Make your documentation accessible to developers with visual impairments or reading disabilities
+  </Card>
+  <Card title="Multitasking" icon="list-check">
+    Let developers listen while coding, debugging, or working on other tasks
+  </Card>
+  <Card title="Learning styles" icon="brain">
+    Support auditory learners who retain information better through listening
+  </Card>
+  <Card title="Developer engagement" icon="users">
+    Increase time-on-page and improve the overall documentation experience
+  </Card>
+</CardGroup>
+
+## Key features
+
+- **Smart regeneration** - Only generates audio when content changes, using hash-based tracking
+- **Multiple voices** - Configure different voices for variety or different content types
+- **S3-compatible storage** - Works with AWS S3, Cloudflare R2, MinIO, and other S3-compatible services
+- **Automatic injection** - Injects audio player components into your MDX files automatically
+- **CI/CD ready** - Designed to integrate seamlessly with GitHub Actions and other automation tools
+- **Flexible configuration** - Use YAML config files, environment variables, or CLI flags
+- **Dry run mode** - Preview changes before making them with the `--dry-run` flag
+
+## How it works
+
+<Steps>
+  <Step title="Extract content">
+    speak-mintlify parses your MDX files and extracts readable text content, removing code blocks and other non-narrative elements
+  </Step>
+  <Step title="Generate audio">
+    Content is sent to Fish Audio TTS API to generate natural-sounding voice narration
+  </Step>
+  <Step title="Upload to S3">
+    Audio files are uploaded to your S3-compatible storage with intelligent caching
+  </Step>
+  <Step title="Inject component">
+    Audio player components are automatically added to your MDX files with the correct voice URLs
+  </Step>
+</Steps>
+
+## Powered by Fish Audio
+
+speak-mintlify uses [Fish Audio](https://fish.audio) for its affordable, high-quality, natural-sounding voices. Unlike other providers that can be expensive and difficult to use at scale, Fish Audio makes it easy to add voice narration to your documentation without breaking the bank.
+
+<Card title="Get started in minutes" icon="rocket" href="/quickstart">
+  Follow our quickstart guide to add voice narration to your documentation
+</Card>
