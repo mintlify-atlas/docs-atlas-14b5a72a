@@ -1,0 +1,72 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "speak-mintlify",
+  "projectDescription": "Automatically generate voice narration for your Mintlify documentation using Fish Audio TTS.",
+  "theme": "palm",
+  "primaryColor": "#a1a2a4",
+  "lightColor": "#1b1b1b",
+  "darkColor": "#d6d6d6",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "installation"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "pages": [
+          "configuration/speaker-config",
+          "configuration/environment-variables",
+          "configuration/audio-component",
+          "configuration/speakignore"
+        ]
+      },
+      {
+        "group": "Commands",
+        "pages": [
+          "commands/generate",
+          "commands/cleanup",
+          "commands/options"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/ci-cd-integration",
+          "guides/fish-audio",
+          "guides/s3-setup",
+          "guides/customization"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/typescript-types",
+          "reference/architecture"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Generate TTS audio directly from MDX files with intelligent hash-based caching",
+    "Support for multiple voices with easy YAML configuration",
+    "Upload audio files to S3-compatible storage (Cloudflare R2, MinIO, etc.)",
+    "Automatic injection of audio player components into documentation",
+    "Cleanup orphaned audio files from S3",
+    "CI/CD pipeline ready with dry-run mode"
+  ],
+  "publicApiSurface": [
+    "speak-mintlify generate [directory] [options]",
+    "speak-mintlify cleanup [directory] [options]",
+    "extractCleanText(content: string): Promise<string>",
+    "generateHash(text: string): string",
+    "createFishAudioClient(apiKey: string)",
+    "createS3Uploader(config: S3Config)",
+    "injectAudioComponent(content: string, voices: Voice[], hash: string, options: ComponentOptions): Promise<string>",
+    "resolveConfig(options: GenerateOptions | CleanupOptions, directory: string): Promise<ResolvedConfig>"
+  ]
+}
